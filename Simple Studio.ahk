@@ -77,7 +77,7 @@ Gui, Add, CheckBox, x+-114 y+9 vcom_cut_endtoggle gCompressionCutEnd Checked +Di
 Gui, Add, Text, vcom_cuttext2 +Disabled, Stop:
 Gui, Add, DateTime, x+9 y+-16 w80 Choose20200731000000 vcom_cutstop gCalculateOutputLenght +Disabled, HH:mm:ss
 
-Gui, Add, Text, x+-114 y+9, Volume Boost (in dB):
+Gui, Add, Text, x+-114 y+9 vcom_text_volume, Volume Boost (in dB):
 Gui, Add, Slider, w200 ToolTipBottom Range-15-15 vcom_volume, 0
 
 Gui, Add, CheckBox, vcom_speed_toggle gCompressionSpeed, Change Speed
@@ -89,10 +89,10 @@ Gui, Add, Button, Default w80 h30 gVideoCompression, Compress
 Gui, Add, CheckBox, ym y45 gCompressionScaling vcom_scale_toggle, Scale Video
 Gui, Add, DropDownList, w80 vcom_scale +Disabled, 144p|240p|360p|480p|720p||1080p|1440p|2160p
 
-Gui, Add, Text, x+-81 y+9, Video Quality: `n(0 - highest <> 51 - lowest)
+Gui, Add, Text, x+-81 y+9 vcom_text_quality, Video Quality: `n(0 - highest <> 51 - lowest)
 Gui, Add, Slider, w200 ToolTipBottom Range0-51 vcom_quality, 22
 
-Gui, Add, Text,, Audio Bitrate:
+Gui, Add, Text, vcom_text_audio_bitrate, Audio Bitrate:
 Gui, Add, DropDownList, w60 vcom_audio_bitrate, 32k|64k|96k|128k|160k|192k||224k|256k|288k|320k
 
 Gui, Add, CheckBox, vcom_bitrate_toggle gCompressionBitrate, Change Bitrate Instead
@@ -135,9 +135,13 @@ Gui, Add, ComboBox, w80 vconcat_ext, mp4||mkv|mov|avi|mp3|wav
 
 Gui, Add, Button, Default w80 h30 gConcatenationSubmit, Concatenate
 
-Gui, Font, w700 s12, Bahnschrift
-Gui, Add, CheckBox, vffmpeg_showcmd, Show Output Command
-Gui, Font
+; =---=---=---=---=---=---=---=---=---=---=---=---=---=---=---=---=
+; Gui, Font, w700 s12, Bahnschrift
+; Gui, Add, CheckBox, vffmpeg_showcmd, Show Output Command
+; Gui, Font
+; =---=---=---=---=---=---=---=---=---=---=---=---=---=---=---=---=
+
+Run, %ComSpec% /c "ffmpeg.exe",, Hide
 
 Gui, Show,, Simple Studio
 
@@ -444,10 +448,20 @@ Return
 
 CompressionSpeed:
     GuiControlGet, com_speed_toggle
-    if (com_speed_toggle)
+    if (com_speed_toggle){
         GuiControl, Enable, com_speed
-    else
+        GuiControl, Disable, com_text_volume
+        GuiControl, Disable, com_volume
+        GuiControl, Disable, com_text_audio_bitrate
+        GuiControl, Disable, com_audio_bitrate
+    }
+    else{
         GuiControl, Disable, com_speed
+        GuiControl, Enable, com_text_volume
+        GuiControl, Enable, com_volume
+        GuiControl, Enable, com_text_audio_bitrate
+        GuiControl, Enable, com_audio_bitrate
+    }
 Return
 
 CompressionScaling:
@@ -492,10 +506,13 @@ Return
 CalculateCompressionBitrate:
     GuiControlGet, com_filesize
     GuiControlGet, com_filelenght
+    GuiControlGet, com_audio_bitrate
+    GuiControlGet, com_speed_toggle
     com_hours = % SubStr(com_filelenght, 9, 2)
     com_minutes = % SubStr(com_filelenght, 11, 2)
     com_seconds = % SubStr(com_filelenght, 13, 2)
-    com_bitrate := (com_filesize) * 8000 / (3600 * com_hours + 60 * com_minutes + com_seconds) - 192
+    com_calc_audio_bitrate = % SubStr(com_audio_bitrate, 1, InStr(com_audio_bitrate, "k") - 1) * !com_speed_toggle
+    com_bitrate := (com_filesize) * 8000 / (3600 * com_hours + 60 * com_minutes + com_seconds) - com_calc_audio_bitrate
     GuiControl,, com_bitrate, %com_bitrate%
 Return
 
@@ -510,6 +527,7 @@ CompressionBitrate:
         GuiControl, Enable, com_filelenght
         GuiControl, Enable, com_bitrate_button
         GuiControl, Disable, com_quality
+        GuiControl, Disable, com_text_quality
     }
     else{
         GuiControl, Disable, com_bitrate
@@ -520,6 +538,7 @@ CompressionBitrate:
         GuiControl, Disable, com_filelenght
         GuiControl, Disable, com_bitrate_button
         GuiControl, Enable, com_quality
+        GuiControl, Enable, com_text_quality
     }
 Return
 
